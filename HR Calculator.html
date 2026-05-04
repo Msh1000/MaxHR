@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Max HR Calculator</title>
+  <style>
+    :root {
+      --bg: #080b12;
+      --card: rgba(255, 255, 255, 0.075);
+      --card-strong: rgba(0, 0, 0, 0.25);
+      --line: rgba(255, 255, 255, 0.11);
+      --text: #ffffff;
+      --muted: rgba(255, 255, 255, 0.58);
+      --soft: rgba(255, 255, 255, 0.35);
+      --accent: #6ee7b7;
+      --accent-strong: #34d399;
+      --ink: #071018;
+      --blue: #bfdbfe;
+      --danger: #fca5a5;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(52, 211, 153, 0.18), transparent 34%),
+        radial-gradient(circle at 82% 12%, rgba(59, 130, 246, 0.19), transparent 32%),
+        linear-gradient(135deg, #080b12 0%, #101827 48%, #070a10 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 22rem;
+      height: 22rem;
+      border-radius: 50%;
+      filter: blur(70px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -9rem;
+      right: -8rem;
+      background: rgba(52, 211, 153, 0.12);
+    }
+
+    body::after {
+      bottom: -10rem;
+      left: -10rem;
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(0.85rem, env(safe-area-inset-top)) max(0.85rem, env(safe-area-inset-right)) max(0.85rem, env(safe-area-inset-bottom)) max(0.85rem, env(safe-area-inset-left));
+    }
+
+    .calculator {
+      width: 100%;
+      max-width: 440px;
+      border: 1px solid var(--line);
+      border-radius: 2rem;
+      background: var(--card);
+      box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      padding: 1.35rem;
+      animation: riseIn 650ms ease both;
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(22px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .logo {
+      width: 3.1rem;
+      height: 3.1rem;
+      display: grid;
+      place-items: center;
+      border-radius: 1.1rem;
+      background: rgba(255, 255, 255, 0.095);
+      border: 1px solid var(--line);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1rem 2rem rgba(0, 0, 0, 0.18);
+    }
+
+    .logo svg {
+      width: 1.55rem;
+      height: 1.55rem;
+      color: var(--accent);
+    }
+
+    .eyebrow {
+      margin: 0 0 0.2rem;
+      color: rgba(167, 243, 208, 0.82);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.25rem, 5vw, 1.55rem);
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+
+    .spark {
+      color: rgba(191, 219, 254, 0.72);
+      font-size: 1.2rem;
+    }
+
+    .field {
+      margin-bottom: 1.35rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.7rem;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.92rem;
+      font-weight: 650;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    input {
+      width: 100%;
+      min-height: 4.1rem;
+      border: 1px solid var(--line);
+      border-radius: 1.25rem;
+      outline: none;
+      background: rgba(0, 0, 0, 0.26);
+      color: var(--text);
+      padding: 1rem 4.4rem 1rem 1.15rem;
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      transition: border 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    input:focus {
+      border-color: rgba(110, 231, 183, 0.66);
+      box-shadow: 0 0 0 4px rgba(110, 231, 183, 0.11);
+      background: rgba(0, 0, 0, 0.32);
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.24);
+    }
+
+    .suffix {
+      position: absolute;
+      right: 1.15rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    .zone-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.85rem;
+      margin-bottom: 1.35rem;
+    }
+
+    .zone-btn {
+      min-height: 5.1rem;
+      border: 1px solid var(--line);
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 1rem;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, border 160ms ease, box-shadow 160ms ease;
+    }
+
+    .zone-btn:active {
+      transform: scale(0.98);
+    }
+
+    .zone-btn strong {
+      display: block;
+      font-size: 1.65rem;
+      line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+
+    .zone-btn span {
+      color: rgba(255, 255, 255, 0.56);
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+
+    .zone-btn.active {
+      background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
+      color: var(--ink);
+      border-color: rgba(209, 250, 229, 0.9);
+      box-shadow: 0 1.2rem 2.4rem rgba(52, 211, 153, 0.2);
+    }
+
+    .zone-btn.active span {
+      color: rgba(7, 16, 24, 0.68);
+    }
+
+    .results {
+      border: 1px solid var(--line);
+      border-radius: 1.65rem;
+      background: var(--card-strong);
+      padding: 1.05rem;
+      margin-bottom: 1rem;
+    }
+
+    .results-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.84rem;
+    }
+
+    .formula {
+      color: rgba(255, 255, 255, 0.36);
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+
+    .metric {
+      border-radius: 1.25rem;
+      padding: 1rem;
+      min-height: 7.2rem;
+    }
+
+    .metric.dark {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+    }
+
+    .metric.green {
+      background: linear-gradient(135deg, rgba(167, 243, 208, 0.98), rgba(110, 231, 183, 0.98));
+      color: var(--ink);
+      box-shadow: 0 1.2rem 2.3rem rgba(52, 211, 153, 0.16);
+    }
+
+    .metric p {
+      margin: 0 0 0.65rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .metric.green p,
+    .metric.green small {
+      color: rgba(7, 16, 24, 0.68);
+    }
+
+    .value {
+      display: block;
+      font-size: clamp(2.15rem, 13vw, 3rem);
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+
+    .value.pulse {
+      animation: valuePulse 260ms ease both;
+    }
+
+    @keyframes valuePulse {
+      0% { transform: translateY(4px); opacity: 0.2; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    small {
+      display: block;
+      margin-top: 0.45rem;
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .note {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      border: 1px solid var(--line);
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.055);
+      padding: 1rem;
+    }
+
+    .note-icon {
+      flex: 0 0 auto;
+      width: 2.35rem;
+      height: 2.35rem;
+      display: grid;
+      place-items: center;
+      border-radius: 0.85rem;
+      background: rgba(147, 197, 253, 0.1);
+      border: 1px solid rgba(191, 219, 254, 0.12);
+      color: var(--blue);
+    }
+
+    .note-title {
+      margin: 0 0 0.28rem;
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    .note-text {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.52);
+      font-size: 0.76rem;
+      line-height: 1.55;
+    }
+
+    .error {
+      min-height: 1.2rem;
+      margin-top: 0.55rem;
+      color: var(--danger);
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+
+    @media (min-width: 520px) {
+      .calculator {
+        padding: 1.75rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .calculator {
+        border-radius: 1.55rem;
+        padding: 1rem;
+      }
+      .metric-grid,
+      .zone-buttons {
+        gap: 0.65rem;
+      }
+      .metric,
+      .zone-btn {
+        padding: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="calculator" aria-labelledby="app-title">
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19.5 13.5c-2.6 4.7-7.5 7-7.5 7s-8-3.8-8-10.2A4.8 4.8 0 0 1 12 6.6a4.8 4.8 0 0 1 8 3.7c0 1.1-.2 2.2-.5 3.2Z" />
+              <path d="M3 13h4l2-4 3 8 2-4h7" />
+            </svg>
+          </div>
+          <div>
+            <p class="eyebrow">Pulse Lab</p>
+            <h1 id="app-title">Max HR Calculator</h1>
+          </div>
+        </div>
+        <div class="spark" aria-hidden="true">✦</div>
+      </header>
+
+      <div class="field">
+        <label for="age">Enter your age</label>
+        <div class="input-wrap">
+          <input id="age" type="number" inputmode="numeric" min="1" max="120" value="30" placeholder="e.g. 30" autocomplete="off" />
+          <span class="suffix">years</span>
+        </div>
+        <div class="error" id="error" aria-live="polite"></div>
+      </div>
+
+      <div class="zone-buttons" role="group" aria-label="Select heart rate percentage">
+        <button class="zone-btn" type="button" data-zone="60" aria-pressed="false">
+          <strong>60%</strong>
+          <span>Easy</span>
+        </button>
+        <button class="zone-btn" type="button" data-zone="70" aria-pressed="false">
+          <strong>70%</strong>
+          <span>Moderate</span>
+        </button>
+        <button class="zone-btn active" type="button" data-zone="80" aria-pressed="true">
+          <strong>80%</strong>
+          <span>Hard</span>
+        </button>
+      </div>
+
+      <div class="results">
+        <div class="results-head">
+          <span>Estimated max heart rate</span>
+          <span class="formula">220 − age</span>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric dark">
+            <p>Max HR</p>
+            <span class="value" id="maxHr">190</span>
+            <small>bpm</small>
+          </div>
+
+          <div class="metric green">
+            <p><span id="targetLabel">80</span>% target</p>
+            <span class="value" id="targetHr">152</span>
+            <small>bpm</small>
+          </div>
+        </div>
+      </div>
+
+      <aside class="note">
+        <div class="note-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 8L9 4l-3 8H2" />
+          </svg>
+        </div>
+        <div>
+          <p class="note-title" id="zoneTitle">Hard Cardio / Performance Zone</p>
+          <p class="note-text">This is an estimate. Consult a doctor or coach if you have any medical conditions or take heart medication.</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const ageInput = document.getElementById("age");
+    const maxHrEl = document.getElementById("maxHr");
+    const targetHrEl = document.getElementById("targetHr");
+    const targetLabelEl = document.getElementById("targetLabel");
+    const zoneTitleEl = document.getElementById("zoneTitle");
+    const errorEl = document.getElementById("error");
+    const zoneButtons = document.querySelectorAll(".zone-btn");
+
+    let selectedZone = 80;
+
+    function pulseValue(element) {
+      element.classList.remove("pulse");
+      void element.offsetWidth;
+      element.classList.add("pulse");
+    }
+
+    function getZoneTitle(zone) {
+      if (zone === 60) return "Steady Fat-Burn / Easy Cardio";
+      if (zone === 70) return "Moderate Cardio / Endurance Zone";
+      return "Hard Cardio / Performance Zone";
+    }
+
+    function calculate() {
+      const age = Number(ageInput.value);
+      const isValid = ageInput.value !== "" && age >= 1 && age <= 120;
+
+      if (!isValid) {
+        maxHrEl.textContent = "--";
+        targetHrEl.textContent = "--";
+        errorEl.textContent = "Enter an age between 1 and 120.";
+        return;
+      }
+
+      errorEl.textContent = "";
+
+      const maxHr = Math.round(220 - age);
+      const targetHr = Math.round(maxHr * (selectedZone / 100));
+
+      maxHrEl.textContent = maxHr;
+      targetHrEl.textContent = targetHr;
+      targetLabelEl.textContent = selectedZone;
+      zoneTitleEl.textContent = getZoneTitle(selectedZone);
+
+      pulseValue(maxHrEl);
+      pulseValue(targetHrEl);
+    }
+
+    ageInput.addEventListener("input", () => {
+      if (Number(ageInput.value) > 120) ageInput.value = 120;
+      if (Number(ageInput.value) < 0) ageInput.value = 0;
+      calculate();
+    });
+
+    zoneButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        selectedZone = Number(button.dataset.zone);
+
+        zoneButtons.forEach((btn) => {
+          const isActive = btn === button;
+          btn.classList.toggle("active", isActive);
+          btn.setAttribute("aria-pressed", String(isActive));
+        });
+
+        calculate();
+      });
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
